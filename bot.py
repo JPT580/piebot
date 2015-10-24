@@ -4,6 +4,8 @@ import asyncio
 import inspect
 import logging
 
+import irc
+
 logging.basicConfig(format="[%(asctime)s] [%(levelname)s] %(message)s", level=logging.DEBUG, datefmt="%d.%m.%Y %H:%M:%S")
 logger = logging.getLogger(__name__)
 
@@ -13,11 +15,12 @@ class ManagedProtocol(asyncio.Protocol):
         Inherit this to overlay the management with actual protocol parsing.
     """
 
-    def __init__(self, loop, connection_manager, endpoint):
+    def __init__(self, config=None, loop=None, connection_manager=None, endpoint=None):
         self._loop = loop
         self._connection_manager = connection_manager
         self._endpoint = endpoint
         self._transport = None
+        self._config = config
 
     def _log(self, msg):
         host, port = self._endpoint
@@ -48,60 +51,72 @@ class ManagedProtocol(asyncio.Protocol):
         """ Triggered by ConnectionManager.remove_endpoint(). Closes transport. """
         self._transport.close()
 
+    def get_config(self):
+        return self._config
 
 class IrcProtocol(ManagedProtocol):
     """Implementation of the IRC protocol.
     """
 
-    def __init__(self, loop, connection_manager, endpoint):
-        super(IrcProtocol, self).__init__(loop, connection_manager, endpoint)
-        self._loop = loop
+    def __init__(self, *args, **kwargs):
+        super(IrcProtocol, self).__init__(*args, **kwargs)
         self.motd = False
         self.hello = False
+        self._config = self.get_config()
+        self._buffer = b""
+
+    def encode(self, str):
+        return str.encode(self._config["encoding"], "replace")
+
+    def decode(self, bytes):
+        return bytes.decode(self._config["encoding"], "replace")
 
     def connection_made(self, transport):
         super(IrcProtocol, self).connection_made(transport)
-        self.send_data(b"USER as as as :as\r\n")
-        self.send_data(b"NICK Pb42\r\n")
-        pass
+        self.send_data(b"USER " + self.encode(self._config["user"]) + b" dummy dummy :"
+            + self.encode(self._config["realname"]) + b"\r\n")
+        self.send_data(b"NICK " + self.encode(self._config["nick"]) + b"\r\n")
 
     def data_received(self, data):
         super(IrcProtocol, self).data_received(data)
-        pass
+        self._buffer += data
+        self.process_data()
 
-    def eof_received(self):
-        super(IrcProtocol, self).eof_received()
-        pass
-
-    def connection_lost(self, exc):
-        super(IrcProtocol, self).connection_lost()
-        pass
-
+    def process_data(self):
+        while b'\r\n' in self._buffer:
+            line, self._buffer = self._buffer.split(b'\r\n', 1)
+            line = self.decode(line.strip())
+            irc_line = irc.IrcLine.from_string(line)
+            print(self.encode(str(irc_line)))
 
 
 class ConnectionManager(object):
     """Takes care of known endpoints that a connections shall be established to.
+        Stores configurations for every configuration.
     """
 
     def __init__(self, loop):
         self._loop = loop
         self._endpoints = []
+        self._configs = {}
         self._active_connections = {}
         self._loop.set_exception_handler(self._handle_async_exception)
 
-    def add_endpoint(self, endpoint):
+    def add_endpoint(self, endpoint, config):
         logger.debug("Endpoint added: {}:{}".format(*endpoint))
         self._endpoints.append(endpoint)
+        self._configs[endpoint] = config
         self._create_connection(endpoint)
 
     def _create_connection(self, endpoint):
-        protocol = IrcProtocol(self._loop, self, endpoint)
+        protocol = IrcProtocol(config=self._configs[endpoint], loop=self._loop, connection_manager=self, endpoint=endpoint)
         coroutine = self._loop.create_connection(lambda: protocol, *endpoint)
-        asyncio.async(coroutine)
+        asyncio.ensure_future(coroutine)
 
     def remove_endpoint(self, endpoint):
         logger.debug("Endpoint removed: {}:{}".format(*endpoint))
         self._endpoints.remove(endpoint)
+        del self._configs[endpoint]
         if endpoint in self._active_connections:
             self._active_connections[endpoint].close()
 
@@ -128,14 +143,16 @@ class ConnectionManager(object):
 
 
 if __name__ == "__main__":
-    freenode = ("irc.freenode.net", 6667)
-    euirc = ("irc.euirc.net", 6667)
-
     loop = asyncio.get_event_loop()
 
     connection_manager = ConnectionManager(loop)
-    connection_manager.add_endpoint(euirc)
-    connection_manager.add_endpoint(freenode)
+    connection_manager.add_endpoint(("irc.freenode.net", 6667), {
+        "encoding": "utf-8",
+        "nick": "Pb42",
+        "user": "foobar",
+        "realname": "Baz McBatzen",
+        "channels": ["#botted"]
+    })
 
     try:
         loop.run_forever()
