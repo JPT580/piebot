@@ -83,8 +83,8 @@ class IrcProtocol(ManagedProtocol):
         self.process_data()
 
     def process_data(self):
-        while b'\r\n' in self._buffer:
-            line, self._buffer = self._buffer.split(b'\r\n', 1)
+        while b"\r\n" in self._buffer:
+            line, self._buffer = self._buffer.split(b"\r\n", 1)
             line = self.decode(line.strip())
             irc_line = irc.IrcLine.from_string(line)
             print(self.encode(str(irc_line)))

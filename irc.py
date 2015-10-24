@@ -1,20 +1,22 @@
 # -*- coding: utf-8 -*-
 
 def parse(line):
-    if line[0:1] == ':':
-        prefix, line = line.split(None, 1)
-        prefix = prefix[1:]
+    prefix = ""
+    if line[0:1] == ":":
+        prefix = ":"
+        subject, line = line.split(None, 1)
+        subject = subject[1:]
     else:
-        prefix = ""
-    if ' :' in line:
-        tmp_str, trailing = line.split(' :', 1)
+        subject = ""
+    if " :" in line:
+        tmp_str, trailing = line.split(" :", 1)
         tmp_args = tmp_str.split()
     else:
         trailing = ""
         tmp_args = line.split()
     command, *middle = tmp_args
     params = middle[:]
-    return prefix, command, params, trailing
+    return prefix, subject, command, params, trailing
 
 
 class IrcLine(object):
@@ -22,6 +24,7 @@ class IrcLine(object):
     """
     def __init__(self):
         self.prefix = ""
+        self.subject = ""
         self.command = ""
         self.params = ""
         self.trailing = ""
@@ -32,15 +35,16 @@ class IrcLine(object):
         data = parse(string)
         print(data)
         instance.prefix = data[0]
-        instance.command = data[1]
-        instance.params = data[2]
-        instance.trailing = data[3]
+        instance.subject = data[1]
+        instance.command = data[2]
+        instance.params = data[3]
+        instance.trailing = data[4]
         return instance
 
     def __repr__(self):
         e = []
-        if self.prefix:
-            e.append(self.prefix)
+        if self.subject:
+            e.append(self.subject)
         if self.command:
             e.append(self.command)
         if self.params:
@@ -48,6 +52,8 @@ class IrcLine(object):
         if self.trailing:
             e.append(":{}".format(self.trailing))
         result = " ".join(e)
+        if self.prefix:
+            result = "".join([self.prefix, result])
         return result
 
     @classmethod
@@ -58,7 +64,7 @@ class IrcLine(object):
         instance.trailing = msg
         return instance
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     l = IrcLine.from_string(":JPT|NC!~AS@euirc-6f528752.pools.arcor-ip.net JOIN :#euirc")
     print(str(l))
     print()
