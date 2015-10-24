@@ -16,66 +16,77 @@ def parse(line):
         tmp_args = line.split()
     command, *middle = tmp_args
     params = middle[:]
-    return prefix, subject, command, params, trailing
+    return {"prefix": prefix, "subject": subject, "command": command, "params": params, "trailing": trailing}
 
-
-class IrcLine(object):
+class Message(object):
     """Handles translation between strings and IrcLines
     """
-    def __init__(self):
-        self.prefix = ""
-        self.subject = ""
-        self.command = ""
-        self.params = ""
-        self.trailing = ""
+    _command_map = {}
+
+    def __init__(self, data={"prefix": "", "subject": "", "command": "", "params": "", "trailing": ""}):
+        self.data = data
 
     @classmethod
     def from_string(cls, string):
-        instance = cls()
         data = parse(string)
-        print(data)
-        instance.prefix = data[0]
-        instance.subject = data[1]
-        instance.command = data[2]
-        instance.params = data[3]
-        instance.trailing = data[4]
+        instance = cls._command_map.get(data["command"].upper(), cls)(data)
+        instance.data = data
         return instance
 
     def __repr__(self):
+        data = self.data
+        print(data)
         e = []
-        if self.subject:
-            e.append(self.subject)
-        if self.command:
-            e.append(self.command)
-        if self.params:
-            e.append(" ".join(self.params))
-        if self.trailing:
-            e.append(":{}".format(self.trailing))
+        if data["subject"]:
+            e.append(data["subject"])
+        if data["command"]:
+            e.append(data["command"])
+        if data["params"]:
+            e.append(" ".join(data["params"]))
+        if data["trailing"]:
+            e.append(":{}".format(data["trailing"]))
         result = " ".join(e)
-        if self.prefix:
-            result = "".join([self.prefix, result])
+        if data["prefix"]:
+            result = "".join([data["prefix"], result])
         return result
 
-    @classmethod
-    def kick(cls, channel, user, msg="KICK"):
-        instance = cls()
-        instance.command = "KICK"
-        instance.params = [channel, user]
-        instance.trailing = msg
-        return instance
+def register_derivative(name, bases, attr):
+    new_cls = type(name, bases, attr)
+    for cls in bases:
+        cmd_map = getattr(cls, '_command_map', None)
+        if cmd_map is not None:
+            command = name.upper()
+            if command in cmd_map:
+                raise KeyError('command {} is already registered to this class'.format(command))
+            cmd_map[command] = new_cls
+    return new_cls
+
+class Privmsg(Message, metaclass=register_derivative):
+    pass
+
+class Kick(Message, metaclass=register_derivative):
+    def __init__(self, channel=None, user=None, message="KICK", *args, **kwargs):
+        super(Kick, self).__init__(*args, **kwargs)
+        self.data.update({
+            "command": "KICK",
+            "params": [channel, user],
+            "trailing": message
+        })
+
 
 if __name__ == "__main__":
-    l = IrcLine.from_string(":JPT|NC!~AS@euirc-6f528752.pools.arcor-ip.net JOIN :#euirc")
+    l = Message.from_string(":JPT|NC!~AS@euirc-6f528752.pools.arcor-ip.net JOIN :#euirc")
     print(str(l))
     print()
 
-    l = IrcLine.from_string(":ChanServ!services@euirc.net MODE #Tonari. +ao JPT JPT")
+    l = Message.from_string(":ChanServ!services@euirc.net MODE #Tonari. +ao JPT JPT")
     print(str(l))
     print()
 
-    line = IrcLine.kick("#botted", "JPT", "Du Sack!")
+    line = Kick("#botted", "JPT", "Du Sack!")
     print(str(line))
-    line2 = IrcLine.from_string(str(line))
+
+    line2 = Message.from_string(str(line))
     print(str(line2))
     exit()
 

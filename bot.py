@@ -146,10 +146,10 @@ if __name__ == "__main__":
     loop = asyncio.get_event_loop()
 
     connection_manager = ConnectionManager(loop)
-    connection_manager.add_endpoint(("irc.freenode.net", 6667), {
+    connection_manager.add_endpoint(("irc.euirc.net", 6667), {
         "encoding": "utf-8",
         "nick": "Pb42",
-        "user": "foobar",
+        "user": "foobar2000",
         "realname": "Baz McBatzen",
         "channels": ["#botted"]
     })
