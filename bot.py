@@ -55,6 +55,7 @@ class ManagedProtocol(asyncio.Protocol):
     def get_config(self):
         return self._config
 
+
 class IrcProtocol(ManagedProtocol):
     """Implementation of the IRC protocol.
     """
@@ -97,6 +98,7 @@ class IrcProtocol(ManagedProtocol):
             self.send_data(data)
 
     def msg_received(self, msg):
+        print(str(msg), msg.data)
         if isinstance(msg, irc.Ping):
             self.send_msg(irc.Pong(msg))
         if isinstance(msg, irc.Message) and msg.get('command') == "376":
@@ -105,6 +107,11 @@ class IrcProtocol(ManagedProtocol):
             if msg.message == "-cycle":
                 self.send_msg(irc.Part(msg.target, "Hop!"))
                 self.send_msg(irc.Join(msg.target))
+        if isinstance(msg, irc.Privmsg):
+            if msg.message.startswith("\x01") and msg.message.endswith("\x01"):
+                text = msg.message.strip("\x01")
+                if text.upper() == "VERSION":
+                    self.send_msg(irc.Privmsg(msg.source, "\x01HalloWelt lustiger Client v0.0.1\x01"))
 
     def ready(self):
         for channel in self._config["channels"]:

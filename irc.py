@@ -16,7 +16,23 @@ def parse(line):
         tmp_args = line.split()
     command, *middle = tmp_args
     params = middle[:]
-    return {"prefix": prefix, "subject": subject, "command": command, "params": params, "trailing": trailing}
+    # Now prepare parsing the subject if possible.
+    if subject != "" and "!" in subject:
+        s_nick, s_identname = subject.split("!", 1)
+        if "@" in s_identname:
+            s_identname, s_host = s_identname.split("@", 1)
+    else:
+        s_nick = s_identname = s_host = subject
+    return {
+        "prefix": prefix,
+        "subject": subject,
+        "command": command,
+        "params": params,
+        "trailing": trailing,
+        "nick": s_nick,
+        "ident": s_identname,
+        "host": s_host
+    }
 
 
 class Message(object):
@@ -30,12 +46,16 @@ class Message(object):
             "subject": "",
             "command": "",
             "params": "",
-            "trailing": ""
+            "trailing": "",
+            "nick": "",
+            "ident": "",
+            "host": ""
         }
 
     @classmethod
     def from_string(cls, string):
         data = parse(string)
+        print(data)
         instance = cls._command_map.get(data["command"].upper(), cls)()
         instance.update(data)
         return instance
