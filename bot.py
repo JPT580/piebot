@@ -34,7 +34,8 @@ class ManagedProtocol(asyncio.Protocol):
         self._log("Connected to: {}:{}".format(host, port))
 
     def data_received(self, data):
-        self._log("[R] "+str(data))
+        #self._log("[R] "+str(data))
+        pass
 
     def eof_received(self):
         self._log("Eof received!")
@@ -44,7 +45,7 @@ class ManagedProtocol(asyncio.Protocol):
         self._connection_manager.unregister_active_connection(self._endpoint)
 
     def send_data(self, data):
-        self._log("[W] "+str(data))
+        #self._log("[W] "+str(data))
         self._transport.write(data)
 
     def destroy(self):
@@ -85,12 +86,14 @@ class IrcProtocol(ManagedProtocol):
         while b"\r\n" in self._buffer:
             line, self._buffer = self._buffer.split(b"\r\n", 1)
             line = self.decode(line.strip())
+            if line == "":
+                continue
             msg = irc.Message.from_string(line)
             self.msg_received(msg)
 
     def send_msg(self, msg):
         if isinstance(msg, irc.Message):
-            data = self.encode(str(msg))
+            data = self.encode(str(msg)+"\r\n")
             self.send_data(data)
 
     def msg_received(self, msg):
@@ -98,6 +101,10 @@ class IrcProtocol(ManagedProtocol):
             self.send_msg(irc.Pong(msg))
         if isinstance(msg, irc.Message) and msg.get('command') == "376":
             self.ready()
+        if isinstance(msg, irc.Privmsg):
+            if msg.message == "-cycle":
+                self.send_msg(irc.Part(msg.target, "Hop!"))
+                self.send_msg(irc.Join(msg.target))
 
     def ready(self):
         for channel in self._config["channels"]:
