@@ -61,17 +61,17 @@ class ConnectionManager(object):
         self._loop.set_exception_handler(self._handle_async_exception)
 
     def add_endpoint(self, endpoint):
-        logger.debug("Endpoint added: {}:{}".format(endpoint[0],endpoint[1]))
+        logger.debug("Endpoint added: {}:{}".format(*endpoint))
         self._endpoints.append(endpoint)
         self._create_connection(endpoint)
 
     def _create_connection(self, endpoint):
         protocol = ManagedProtocol(self._loop, self, endpoint)
-        coroutine = self._loop.create_connection(lambda: protocol, endpoint[0], endpoint[1])
+        coroutine = self._loop.create_connection(lambda: protocol, *endpoint)
         asyncio.async(coroutine)
 
     def remove_endpoint(self, endpoint):
-        logger.debug("Endpoint removed: {}:{}".format(endpoint[0],endpoint[1]))
+        logger.debug("Endpoint removed: {}:{}".format(*endpoint))
         self._endpoints.remove(endpoint)
         if endpoint in self._active_connections:
             self._active_connections[endpoint].close()
@@ -94,19 +94,19 @@ class ConnectionManager(object):
             port = call_args.locals['port']
             logger.error("Bad endpoint: {}:{}".format(host, port))
             self.remove_endpoint((host, port))
-            return True
-        return False
+        else:
+            loop.call_exception_handler(context)
 
 
 if __name__ == '__main__':
     freenode = ("irc.freenode.net", 6667)
-    euirc = ("irc.esduirc.net", 6267)
+    euirc = ("irc.euisadasdrc.net", 6667)
 
     loop = asyncio.get_event_loop()
 
     connection_manager = ConnectionManager(loop)
     connection_manager.add_endpoint(euirc)
-    #connection_manager.add_endpoint(freenode)
+    connection_manager.add_endpoint(freenode)
 
     try:
         loop.run_forever()
