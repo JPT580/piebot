@@ -73,9 +73,8 @@ class IrcProtocol(ManagedProtocol):
 
     def connection_made(self, transport):
         super(IrcProtocol, self).connection_made(transport)
-        self.send_data(b"USER " + self.encode(self._config["user"]) + b" dummy dummy :"
-            + self.encode(self._config["realname"]) + b"\r\n")
-        self.send_data(b"NICK " + self.encode(self._config["nick"]) + b"\r\n")
+        self.send_msg(irc.User(self._config["ident"], self._config["realname"]))
+        self.send_msg(irc.Nick(self._config["nick"]))
 
     def data_received(self, data):
         super(IrcProtocol, self).data_received(data)
@@ -86,9 +85,24 @@ class IrcProtocol(ManagedProtocol):
         while b"\r\n" in self._buffer:
             line, self._buffer = self._buffer.split(b"\r\n", 1)
             line = self.decode(line.strip())
-            irc_line = irc.IrcLine.from_string(line)
-            print(self.encode(str(irc_line)))
+            msg = irc.Message.from_string(line)
+            self.msg_received(msg)
 
+    def send_msg(self, msg):
+        if isinstance(msg, irc.Message):
+            data = self.encode(str(msg))
+            self.send_data(data)
+
+    def msg_received(self, msg):
+        if isinstance(msg, irc.Ping):
+            self.send_msg(irc.Pong(msg))
+        if isinstance(msg, irc.Message) and msg.get('command') == "376":
+            self.ready()
+
+    def ready(self):
+        for channel in self._config["channels"]:
+            self.send_msg(irc.Join(channel))
+            self.send_msg(irc.Privmsg(channel, "Hallo Welt!"))
 
 class ConnectionManager(object):
     """Takes care of known endpoints that a connections shall be established to.
@@ -149,7 +163,7 @@ if __name__ == "__main__":
     connection_manager.add_endpoint(("irc.euirc.net", 6667), {
         "encoding": "utf-8",
         "nick": "Pb42",
-        "user": "foobar2000",
+        "ident": "foobar2000",
         "realname": "Baz McBatzen",
         "channels": ["#botted"]
     })

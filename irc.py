@@ -18,24 +18,30 @@ def parse(line):
     params = middle[:]
     return {"prefix": prefix, "subject": subject, "command": command, "params": params, "trailing": trailing}
 
+
 class Message(object):
     """Handles translation between strings and IrcLines
     """
     _command_map = {}
 
-    def __init__(self, data={"prefix": "", "subject": "", "command": "", "params": "", "trailing": ""}):
-        self.data = data
+    def __init__(self):
+        self.data = {
+            "prefix": "",
+            "subject": "",
+            "command": "",
+            "params": "",
+            "trailing": ""
+        }
 
     @classmethod
     def from_string(cls, string):
         data = parse(string)
-        instance = cls._command_map.get(data["command"].upper(), cls)(data)
-        instance.data = data
+        instance = cls._command_map.get(data["command"].upper(), cls)()
+        instance.set_data(data)
         return instance
 
     def __repr__(self):
         data = self.data
-        print(data)
         e = []
         if data["subject"]:
             e.append(data["subject"])
@@ -48,7 +54,13 @@ class Message(object):
         result = " ".join(e)
         if data["prefix"]:
             result = "".join([data["prefix"], result])
-        return result
+        return result+"\r\n"
+
+    def get(self, attr):
+        return self.data[attr]
+
+    def set_data(self, data):
+        self.data = data
 
 def register_derivative(name, bases, attr):
     new_cls = type(name, bases, attr)
@@ -61,17 +73,78 @@ def register_derivative(name, bases, attr):
             cmd_map[command] = new_cls
     return new_cls
 
-class Privmsg(Message, metaclass=register_derivative):
+class User(Message, metaclass=register_derivative):
+    def __init__(self, ident=None, realname=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.data.update({
+            "command": "USER",
+            "params": [ident, "*", "*"],
+            "trailing": realname
+        })
+
+class Nick(Message, metaclass=register_derivative):
+    def __init__(self, nick=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.data.update({
+            "command": "NICK",
+            "trailing": nick
+        })
+
+class Ping(Message, metaclass=register_derivative):
     pass
+
+class Pong(Message, metaclass=register_derivative):
+    def __init__(self, ping=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.data.update({
+            "command": "PONG",
+            "trailing": ping.data["trailing"]
+        })
+
+class Privmsg(Message, metaclass=register_derivative):
+    def __init__(self, target=None, message=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.data.update({
+            "command": "PRIVMSG",
+            "params": [target],
+            "trailing": message
+        })
+
+class Notice(Message, metaclass=register_derivative):
+    def __init__(self, target=None, message=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.data.update({
+            "command": "NOTICE",
+            "params": [target],
+            "trailing": message
+        })
 
 class Kick(Message, metaclass=register_derivative):
     def __init__(self, channel=None, user=None, message="KICK", *args, **kwargs):
-        super(Kick, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.data.update({
             "command": "KICK",
             "params": [channel, user],
             "trailing": message
         })
+
+class Join(Message, metaclass=register_derivative):
+    def __init__(self, channel=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.data.update({
+            "command": "JOIN",
+            "trailing": channel
+        })
+
+class Part(Message, metaclass=register_derivative):
+    def __init__(self, channel=None, message="PART", *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.data.update({
+            "command": "PART",
+            "params": [channel],
+            "trailing": message
+        })
+
 
 
 if __name__ == "__main__":
@@ -83,11 +156,9 @@ if __name__ == "__main__":
     print(str(l))
     print()
 
-    line = Kick("#botted", "JPT", "Du Sack!")
-    print(str(line))
+    line3 = Join("#botted")
+    print(str(line3))
 
-    line2 = Message.from_string(str(line))
-    print(str(line2))
     exit()
 
 
