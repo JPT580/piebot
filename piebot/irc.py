@@ -205,7 +205,7 @@ class Kick(Message, metaclass=register_derivative):
                 "trailing": message
             })
     def parse(self):
-        self.source = self.get("subject")
+        self.source = self.get("nick")
         self.channel = self.get("params")[0]
         self.target = self.get("params")[1]
         self.message = self.get("trailing")

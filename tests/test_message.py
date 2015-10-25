@@ -77,3 +77,42 @@ class Message(unittest.TestCase):
         msg = irc.Notice(target="#somewhere", message="wheee eee!")
         self.assertEqual(str(msg), "NOTICE #somewhere :wheee eee!")
 
+
+    def test_parse_kick(self):
+        raw = ":devil!~evil@guy.nl KICK #mods mike :damn it, mike!"
+        msg = irc.Message.from_string(raw)
+        self.assertIsInstance(msg, irc.Kick, msg="Not a Kick!")
+        self.assertEqual(msg.source, "devil")
+        self.assertEqual(msg.channel, "#mods")
+        self.assertEqual(msg.target, "mike")
+        self.assertEqual(msg.message, "damn it, mike!")
+
+    def test_construct_kick(self):
+        msg = irc.Kick(channel="#lobby", user="annoying_guy", message="please leave")
+        self.assertEqual(str(msg), "KICK #lobby annoying_guy :please leave")
+
+
+    def test_parse_join(self):
+        raw = ":frank!~that@guy.again JOIN #lounge"
+        msg = irc.Message.from_string(raw)
+        self.assertIsInstance(msg, irc.Join, msg="Not a Join!")
+        self.assertEqual(msg.nick, "frank")
+        self.assertEqual(msg.channel, "#lounge")
+
+    def test_construct_join(self):
+        msg = irc.Join(channel="#hiking")
+        self.assertEqual(str(msg), "JOIN :#hiking")
+
+
+    def test_parse_part(self):
+        raw = ":trump!~rich@billionaire.gold PART #society :suck it up"
+        msg = irc.Message.from_string(raw)
+        self.assertIsInstance(msg, irc.Part, msg="Not a Part!")
+        self.assertEqual(msg.nick, "trump")
+        self.assertEqual(msg.channel, "#society")
+        self.assertEqual(msg.message, "suck it up")
+
+    def test_construct_part(self):
+        msg = irc.Part(channel="#tower", message="don't fall off")
+        self.assertEqual(str(msg), "PART #tower :don't fall off")
+
