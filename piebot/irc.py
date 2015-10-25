@@ -63,7 +63,10 @@ class Message(object):
     @classmethod
     def from_string(cls, string):
         data = parse(string)
-        instance = cls._command_map.get(data["command"].upper(), cls)(data=data)
+        command = data["command"].upper()
+        if command.isdigit():
+            command = "Numeric{}".format(command).upper()
+        instance = cls._command_map.get(command, cls)(data=data)
         return instance
 
     def __repr__(self):
@@ -300,3 +303,10 @@ class Quit(Message, metaclass=register_derivative):
     def parse(self):
         self.nick = self.get("nick")
         self.message = self.get("trailing")
+
+class Numeric005(Message, metaclass=register_derivative):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def parse(self):
+        pass
