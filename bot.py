@@ -22,30 +22,30 @@ class ManagedProtocol(asyncio.Protocol):
         self._transport = None
         self._config = config
 
-    def _log(self, msg):
+    def log(self, msg):
         host, port = self._endpoint
         logger.info("[{}:{}] ".format(host, port)+str(msg))
 
     def connection_made(self, transport):
         self._connection_manager.register_active_connection(self._endpoint, self)
         self._transport = transport
-        self._log("Connection made!")
+        self.log("Connection made!")
         host, port = transport.get_extra_info("peername")
-        self._log("Connected to: {}:{}".format(host, port))
+        self.log("Connected to: {}:{}".format(host, port))
 
     def data_received(self, data):
-        #self._log("[R] "+str(data))
+        #self.log("[R] "+str(data))
         pass
 
     def eof_received(self):
-        self._log("Eof received!")
+        self.log("Eof received!")
 
     def connection_lost(self, exc):
-        self._log("Connection lost! ("+str(exc)+")")
+        self.log("Connection lost! ("+str(exc)+")")
         self._connection_manager.unregister_active_connection(self._endpoint)
 
     def send_data(self, data):
-        #self._log("[W] "+str(data))
+        #self.log("[W] "+str(data))
         self._transport.write(data)
 
     def destroy(self):
@@ -95,10 +95,12 @@ class IrcProtocol(ManagedProtocol):
 
     def send_msg(self, msg):
         if isinstance(msg, irc.Message):
+            self.log(msg.__repr__())
             data = self.encode(str(msg)+"\r\n")
             self.send_data(data)
 
     def msg_received(self, msg):
+        self.log(msg.__repr__())
         if isinstance(msg, irc.Ping):
             self.send_msg(irc.Pong(msg))
         if isinstance(msg, irc.Message) and msg.get('command') == "376":
