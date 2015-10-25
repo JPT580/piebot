@@ -69,7 +69,7 @@ class Message(object):
         for key in items:
             if key == "data":
                 continue
-            e.append(key+"="+str(items[key]))
+            e.append(key+"='"+str(items[key])+"'")
         return "<" + self.__class__.__name__ + " " + ", ".join(e) + ">"
 
     def __str__(self):
