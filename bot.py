@@ -77,6 +77,7 @@ class IrcProtocol(ManagedProtocol):
         super(IrcProtocol, self).connection_made(transport)
         self.send_msg(irc.User(self._config["ident"], self._config["realname"]))
         self.send_msg(irc.Nick(self._config["nick"]))
+        self.nick = self._config["nick"]
 
     def data_received(self, data):
         super(IrcProtocol, self).data_received(data)
@@ -111,6 +112,10 @@ class IrcProtocol(ManagedProtocol):
                 text = msg.message.strip("\x01")
                 if text.upper() == "VERSION":
                     self.send_msg(irc.Privmsg(msg.get("nick"), "\x01HalloWelt lustiger Client v0.0.1\x01"))
+        if isinstance(msg, irc.Kick):
+            if msg.target == self.nick:
+                self.send_msg(irc.Join(msg.channel))
+                self.send_msg(irc.Privmsg(msg.channel, "Hey, das war nicht nett!"))
 
     def ready(self):
         for channel in self._config["channels"]:

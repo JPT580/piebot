@@ -177,7 +177,8 @@ class Kick(Message, metaclass=register_derivative):
             })
     def parse(self):
         self.source = self.get("subject")
-        self.target = self.get("params")[0]
+        self.channel = self.get("params")[0]
+        self.target = self.get("params")[1]
         self.message = self.get("trailing")
 
 class Join(Message, metaclass=register_derivative):
@@ -219,7 +220,6 @@ class Mode(Message, metaclass=register_derivative):
         self.usermode = False
         self.source = self.get("nick")
         self.subject = self.get("params")[0]
-        print(self.get("params"))
         if(self.source == self.subject):
             """Parsing user modes here."""
             self.usermode = True
@@ -276,7 +276,5 @@ if __name__ == "__main__":
             d = msg.__dict__
             del d["data"]
             print(d)
-
         print()
-
     exit()
