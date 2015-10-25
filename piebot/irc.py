@@ -276,24 +276,3 @@ class Topic(Message, metaclass=register_derivative):
         self.source = self.get("nick")
         self.channel = self.get("params")[0]
         self.topic = self.get("trailing")
-
-
-
-if __name__ == "__main__":
-    buffer = b":irc.inn.at.euirc.net 001 JPT|NC :Welcome to the euIRCnet IRC Network JPT|NC!~AS@dslc-082-082-091-237.pools.arcor-ip.net\r\n:JPT|NC MODE JPT|NC :+ix\r\n:SpamScanner!service@central.euirc.net PRIVMSG JPT|NC :\x01VERSION\x01\r\n:JPT|NC!~AS@euirc-6f528752.pools.arcor-ip.net JOIN :#Tonari.\r\n:Lunlun!~l00n@euirc-e7be0d00.dip0.t-ipconnect.de JOIN :#Tonari.\r\n:ChanServ!services@euirc.net MODE #Tonari. +ao Lunlun Lunlun\r\n:Nitori!~kappa@chireiden.net PRIVMSG JPT|NC :\x01VERSION\x01\r\nPING :irc.inn.at.euirc.net\r\n:JPT|NC!~ADS@dslc-082-082-091-237.pools.arcor-ip.net JOIN #botted\r\n:JPT|NC!~ADS@dslc-082-082-091-237.pools.arcor-ip.net QUIT :Ping timeout: 272 seconds\r\nERROR :Closing Link: dslc-082-082-091-237.pools.arcor-ip.net (Ping timeout: 272 seconds)\r\n:JPT!~jpt@jpt.lu MODE #botted -h Pb42\r\n:JPT!~jpt@jpt.lu MODE #botted +v Pb42\r\n:JPT!~jpt@jpt.lu MODE #botted +o Pb42\r\n:JPT!~jpt@jpt.lu MODE #botted -vo Pb42 Pb42\r\n:JPT!~jpt@jpt.lu MODE #botted +b *illegal*!*@*\r\n:JPT!~jpt@jpt.lu MODE #botted -b *illegal*!*@*\r\n:JPT!~jpt@jpt.lu TOPIC #botted :#botted - edited\r\nPING :irc.hes.de.euirc.net\r\nPONG :irc.hes.de.euirc.net\r\n:JPT!~jpt@jpt.lu TOPIC #botted :#botted\r\n:JPT!~jpt@jpt.lu MODE #botted +i\r\n:JPT!~jpt@jpt.lu MODE #botted -i\r\n:JPT!~jpt@jpt.lu NICK :whoops\r\n"
-    while b"\r\n" in buffer:
-        line, buffer = buffer.split(b"\r\n", 1)
-        if line == b"":
-            continue
-        line = line.decode("utf-8")
-        msg = Message.from_string(line)
-        print(msg.__repr__())
-        print(str(msg))
-        if msg.__class__.__name__ == 'Message':
-            print(msg.__dict__)
-        else:
-            d = msg.__dict__
-            del d["data"]
-            print(d)
-        print()
-    exit()
