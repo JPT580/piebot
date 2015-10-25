@@ -157,3 +157,16 @@ class Message(unittest.TestCase):
     def test_construct_topic(self):
         msg = irc.Topic(channel="#politics", topic="Yes, we can!")
         self.assertEqual(str(msg), "TOPIC #politics :Yes, we can!")
+
+
+    def test_parse_quit(self):
+        raw = ":worker!~frustrated@company.com QUIT :This is it!"
+        msg = irc.Message.from_string(raw)
+        self.assertIsInstance(msg, irc.Quit, msg="Not a Quit!")
+        self.assertEqual(msg.nick, "worker")
+        self.assertEqual(msg.message, "This is it!")
+
+    def test_construct_quit(self):
+        msg = irc.Quit(message="Good bye!")
+        self.assertEqual(str(msg), "QUIT :Good bye!")
+

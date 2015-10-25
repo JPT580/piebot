@@ -288,3 +288,15 @@ class Topic(Message, metaclass=register_derivative):
         self.source = self.get("nick")
         self.channel = self.get("params")[0]
         self.topic = self.get("trailing")
+
+class Quit(Message, metaclass=register_derivative):
+    def __init__(self, message="QUIT", *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if "data" not in kwargs:
+            self.update({
+                "command": "QUIT",
+                "trailing": message
+            })
+    def parse(self):
+        self.nick = self.get("nick")
+        self.message = self.get("trailing")
