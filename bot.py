@@ -145,7 +145,9 @@ class ConnectionManager(object):
     def _create_connection(self, endpoint):
         protocol = IrcProtocol(config=self._configs[endpoint], loop=self._loop, connection_manager=self, endpoint=endpoint)
         coroutine = self._loop.create_connection(lambda: protocol, *endpoint)
+        logger.debug("Coroutine for endpoint {}:{} created.".format(*endpoint))
         asyncio.ensure_future(coroutine)
+        logger.debug("Coroutine for endpoint {}:{} ensured.".format(*endpoint))
 
     def remove_endpoint(self, endpoint):
         logger.debug("Endpoint removed: {}:{}".format(*endpoint))
