@@ -2,20 +2,22 @@
 
 def parse(line):
     prefix = ""
+    subject = ""
+    trailing = ""
+    command = ""
+    params = ""
     if line[0:1] == ":":
         prefix = ":"
-        subject, line = line.split(" ", 1)
-        subject = subject[1:]
-    else:
-        subject = ""
+        line = line[1:]
+        if " " in line:
+            subject, line = line.split(" ", 1)
     if " :" in line:
-        tmp_str, trailing = line.split(" :", 1)
-        tmp_args = tmp_str.split()
+        line, trailing = line.split(" :", 1)
+    if " " in line:
+        command, *middle = line.split()
+        params = middle[:]
     else:
-        trailing = ""
-        tmp_args = line.split()
-    command, *middle = tmp_args
-    params = middle[:]
+        command = line
     # Now prepare parsing the subject if possible.
     if subject != "" and "!" in subject:
         s_nick, s_identname = subject.split("!", 1)
@@ -24,7 +26,7 @@ def parse(line):
             s_identname = s_identname.strip("~")
     else:
         s_nick = s_identname = s_host = subject
-    return {
+    result = {
         "prefix": prefix,
         "subject": subject,
         "command": command,
@@ -34,6 +36,7 @@ def parse(line):
         "ident": s_identname,
         "host": s_host
     }
+    return result
 
 
 class Message(object):
@@ -88,7 +91,7 @@ class Message(object):
             e.append(":{}".format(data["trailing"]))
         result = " ".join(e)
         if data["prefix"]:
-            result = "".join([data["prefix"], result])
+            result = data["prefix"] + result
         return result
 
     def get(self, attr):
@@ -142,16 +145,24 @@ class Nick(Message, metaclass=register_derivative):
         self.nick = self.get("trailing")
 
 class Ping(Message, metaclass=register_derivative):
+    def __init__(self, payload="", *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if "data" not in kwargs:
+            self.update({
+                "command": "PING",
+                "trailing": payload
+            })
     def parse(self):
         self.payload = self.get("trailing")
 
 class Pong(Message, metaclass=register_derivative):
-    def __init__(self, ping="", *args, **kwargs):
+    def __init__(self, ping="", payload="", *args, **kwargs):
         super().__init__(*args, **kwargs)
         if "data" not in kwargs:
+            if ping: payload = ping.data["trailing"]
             self.update({
                 "command": "PONG",
-                "trailing": ping.data["trailing"]
+                "trailing": payload
             })
     def parse(self):
         self.payload = self.get("trailing")
