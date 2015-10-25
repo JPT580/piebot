@@ -239,13 +239,14 @@ class Part(Message, metaclass=register_derivative):
         self.message = self.get("trailing")
 
 class Mode(Message, metaclass=register_derivative):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, subject="", modes=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if "data" not in kwargs:
             self.update({
                 "command": "MODE",
             })
     def parse(self):
+        #TODO: Implement this in a proper way!
         self.usermode = False
         self.source = self.get("nick")
         self.subject = self.get("params")[0]

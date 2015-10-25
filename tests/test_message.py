@@ -116,3 +116,44 @@ class Message(unittest.TestCase):
         msg = irc.Part(channel="#tower", message="don't fall off")
         self.assertEqual(str(msg), "PART #tower :don't fall off")
 
+
+    def test_parse_mode_usermode(self):
+        #TODO
+        raw = ":Me!~myself@localhost MODE Me :+ix"
+        msg = irc.Message.from_string(raw)
+        self.assertIsInstance(msg, irc.Mode, msg="Not a Mode!")
+        self.assertEqual(msg.usermode, True)
+        self.assertEqual(msg.flags, [('i', True), ('x', True)])
+        self.assertEqual(msg.source, "Me")
+        self.assertEqual(msg.subject, "Me")
+
+    def test_parse_mode_channelmode(self):
+        #TODO
+        raw = ":Mod!~moderator@ordering.chat MODE #botted +vo admin admin"
+        msg = irc.Message.from_string(raw)
+        self.assertIsInstance(msg, irc.Mode, msg="Not a Mode!")
+        self.assertEqual(msg.usermode, False)
+        self.assertEqual(msg.flags, [('v', True, 'admin'), ('o', True, 'admin')])
+        self.assertEqual(msg.source, "Mod")
+        self.assertEqual(msg.subject, "#botted")
+
+    def test_construct_mode_usermode(self):
+        #TODO
+        pass
+
+    def test_construct_mode_channelmode(self):
+        #TODO
+        pass
+
+
+    def test_parse_topic(self):
+        raw = ":chanop!~important@guy.org TOPIC #couch :New Topic!"
+        msg = irc.Message.from_string(raw)
+        self.assertIsInstance(msg, irc.Topic, msg="Not a Topic!")
+        self.assertEqual(msg.source, "chanop")
+        self.assertEqual(msg.channel, "#couch")
+        self.assertEqual(msg.topic, "New Topic!")
+
+    def test_construct_topic(self):
+        msg = irc.Topic(channel="#politics", topic="Yes, we can!")
+        self.assertEqual(str(msg), "TOPIC #politics :Yes, we can!")
