@@ -65,6 +65,9 @@ class Message(object):
 
     def __repr__(self):
         items = self.__dict__.copy()
+        if len(items) == 1:
+            items = items["data"]
+            for e in ["prefix", "nick", "host", "ident"]: del items[e]
         e = []
         for key in items:
             if key == "data":
