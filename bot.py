@@ -187,6 +187,13 @@ if __name__ == "__main__":
         "realname": "Baz McBatzen",
         "channels": ["#botted"]
     })
+    connection_manager.add_endpoint(("irc.freenode.net", 6667), {
+        "encoding": "utf-8",
+        "nick": "Pb42",
+        "ident": "foobar2000",
+        "realname": "Baz McBatzen",
+        "channels": ["#botted"]
+    })
 
     try:
         loop.run_forever()
