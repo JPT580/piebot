@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 def parse(line):
+    """ This is the basic irc line parser function.
+    """
     prefix = ""
     subject = ""
     trailing = ""

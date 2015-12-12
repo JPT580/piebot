@@ -4,7 +4,7 @@ import asyncio
 import inspect
 import logging
 
-import irc
+from . import irc
 
 logging.basicConfig(format="[%(asctime)s] [%(levelname)s] %(message)s", level=logging.DEBUG, datefmt="%d.%m.%Y %H:%M:%S")
 logger = logging.getLogger(__name__)
@@ -176,30 +176,3 @@ class ConnectionManager(object):
             self.remove_endpoint((host, port))
         else:
             loop.call_exception_handler(context)
-
-
-if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-
-    connection_manager = ConnectionManager(loop)
-    connection_manager.add_endpoint(("irc.euirc.net", 6667), {
-        "encoding": "utf-8",
-        "nick": "Pb42",
-        "ident": "foobar2000",
-        "realname": "Baz McBatzen",
-        "channels": ["#botted"]
-    })
-    connection_manager.add_endpoint(("irc.freenode.net", 6667), {
-        "encoding": "utf-8",
-        "nick": "Pb42",
-        "ident": "foobar2000",
-        "realname": "Baz McBatzen",
-        "channels": ["#botted"]
-    })
-
-    try:
-        loop.run_forever()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        loop.close()
